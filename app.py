@@ -6,43 +6,116 @@ from security.inventory import get_initial_inventory
 # Page Configuration
 st.set_page_config(page_title="Crypto Pipeline Demo", page_icon="🪙", layout="wide")
 
-# Custom CSS for rich visual styling
-st.markdown("""
+# Theme state initialization (defaults to Light mode)
+if "theme" not in st.session_state:
+    st.session_state.theme = "light"
+
+is_dark = st.session_state.theme == "dark"
+
+# Dynamic CSS styling based on active theme
+bg_color = "#0F172A" if is_dark else "#F8FAFC"
+text_color = "#F8FAFC" if is_dark else "#0F172A"
+sub_text_color = "#94A3B8" if is_dark else "#64748B"
+card_bg = "#1E293B" if is_dark else "#FFFFFF"
+card_border = "#334155" if is_dark else "#E2E8F0"
+status_app_bg = "#064E3B" if is_dark else "#DCFCE7"
+status_app_text = "#A7F3D0" if is_dark else "#166534"
+status_app_border = "#059669" if is_dark else "#BBF7D0"
+status_rej_bg = "#7F1D1D" if is_dark else "#FEE2E2"
+status_rej_text = "#FCA5A5" if is_dark else "#991B1B"
+status_rej_border = "#DC2626" if is_dark else "#FCA5A5"
+
+st.markdown(f"""
 <style>
-    .main-header {
+    /* Global Page Styling */
+    .stApp {{
+        background-color: {bg_color};
+        color: {text_color};
+        transition: background-color 0.3s ease, color 0.3s ease;
+    }}
+    
+    .main-header {{
         font-size: 2.2rem;
         font-weight: 700;
-        color: #1E293B;
+        color: {text_color};
         margin-bottom: 0.2rem;
-    }
-    .sub-header {
+    }}
+    
+    .sub-header {{
         font-size: 1rem;
-        color: #64748B;
+        color: {sub_text_color};
         margin-bottom: 1.5rem;
-    }
-    .metric-card {
-        background: #F8FAFC;
-        border: 1px solid #E2E8F0;
+    }}
+    
+    /* Metrics Card Styling */
+    .metric-card {{
+        background: {card_bg};
+        border: 1px solid {card_border};
         border-radius: 8px;
         padding: 1rem;
         text-align: center;
-    }
-    .status-approved {
-        background-color: #DCFCE7;
-        color: #166534;
+    }}
+
+    [data-testid="stMetric"] {{
+        background-color: {card_bg} !important;
+        border: 1px solid {card_border} !important;
+        border-radius: 10px !important;
+        padding: 0.85rem 1rem !important;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, {"0.2" if is_dark else "0.04"}) !important;
+    }}
+    
+    [data-testid="stMetricValue"] {{
+        color: {text_color} !important;
+    }}
+    
+    [data-testid="stMetricLabel"] {{
+        color: {sub_text_color} !important;
+    }}
+    
+    /* Form Container */
+    [data-testid="stForm"] {{
+        background-color: {card_bg} !important;
+        border: 1px solid {card_border} !important;
+        border-radius: 12px !important;
+        padding: 1.5rem !important;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, {"0.3" if is_dark else "0.05"}) !important;
+    }}
+
+    /* Form Inputs Styling */
+    [data-baseweb="input"], [data-baseweb="select"] {{
+        background-color: {card_bg} !important;
+        color: {text_color} !important;
+    }}
+    
+    /* Status Badges */
+    .status-approved {{
+        background-color: {status_app_bg};
+        color: {status_app_text};
+        border: 1px solid {status_app_border};
         padding: 0.5rem 1rem;
         border-radius: 6px;
         font-weight: 600;
         display: inline-block;
-    }
-    .status-rejected {
-        background-color: #FEE2E2;
-        color: #991B1B;
+    }}
+    
+    .status-rejected {{
+        background-color: {status_rej_bg};
+        color: {status_rej_text};
+        border: 1px solid {status_rej_border};
         padding: 0.5rem 1rem;
         border-radius: 6px;
         font-weight: 600;
         display: inline-block;
-    }
+    }}
+    
+    /* Dynamic Headers and Text Colors */
+    h1, h2, h3, h4, h5, h6, label, p, span {{
+        color: {text_color} !important;
+    }}
+    
+    hr {{
+        border-color: {card_border} !important;
+    }}
 </style>
 """, unsafe_allow_html=True)
 
@@ -50,9 +123,19 @@ st.markdown("""
 if "inventory" not in st.session_state:
     st.session_state.inventory = get_initial_inventory()
 
-# UI Layout
-st.markdown("<div class='main-header'>⚡ Crypto Transaction Pipeline</div>", unsafe_allow_html=True)
-st.markdown("<div class='sub-header'>Git Branching & Integration Practice Application</div>", unsafe_allow_html=True)
+# UI Layout Header with Top-Right Mode Selector Button
+col_header, col_theme = st.columns([3.5, 1.2])
+
+with col_header:
+    st.markdown("<div class='main-header'>⚡ Crypto Transaction Pipeline</div>", unsafe_allow_html=True)
+    st.markdown("<div class='sub-header'>Git Branching & Integration Practice Application</div>", unsafe_allow_html=True)
+
+with col_theme:
+    st.markdown("<div style='height: 5px;'></div>", unsafe_allow_html=True)
+    mode_label = "☀️ Light Mode" if is_dark else "🌙 Dark Mode"
+    if st.button(mode_label, key="theme_toggle_btn", use_container_width=True, help="Click to switch between Light and Dark theme"):
+        st.session_state.theme = "light" if is_dark else "dark"
+        st.rerun()
 
 col_input, col_output = st.columns([1, 1.2])
 
@@ -114,3 +197,4 @@ st.subheader("🔒 Security Holdings Inventory")
 inv_cols = st.columns(len(st.session_state.inventory))
 for i, (asset, amount) in enumerate(st.session_state.inventory.items()):
     inv_cols[i].metric(label=f"Holdings ({asset})", value=f"{amount:,.2f}")
+
